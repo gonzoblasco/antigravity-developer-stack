@@ -1,0 +1,10 @@
+{
+  "parameters": {
+    "functionCode": "// Código JavaScript personalizado\n// Los items de entrada están en $input.all()\n// Retorna un array de items\n\nconst items = $input.all();\n\nconst processedItems = items.map(item => {\n  return {\n    json: {\n      // Tu transformación aquí\n      ...item.json,\n      processedAt: new Date().toISOString()\n    }\n  };\n});\n\nreturn processedItems;"
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "Code",
+  "type": "n8n-nodes-base.code",
+  "typeVersion": 2,
+  "position": [450, 300]
+}

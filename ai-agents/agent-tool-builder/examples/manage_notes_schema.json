@@ -1,0 +1,51 @@
+{
+  "name": "manage_notes",
+  "description": "Gestiona notas persistentes con operaciones CRUD y búsqueda. INPUTS: action (enum: create|read|update|delete|search|list), note_id (string, requerido para read/update/delete), title (string 1-100 chars, requerido para create), content (string 1-5000 chars), tags (array strings max 10), query (string para search). RETURNS: {note: {id, title, content, tags, created_at, updated_at}, status: 'success'} o {notes: [...], total: int} para list/search. ERRORS: 'note_not_found' si note_id no existe, 'validation_error' si faltan campos requeridos.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["create", "read", "update", "delete", "search", "list"],
+        "description": "Operación a realizar sobre las notas"
+      },
+      "note_id": {
+        "type": "string",
+        "description": "ID único de la nota (requerido para read/update/delete)",
+        "pattern": "^[a-zA-Z0-9_-]+$",
+        "default": ""
+      },
+      "title": {
+        "type": "string",
+        "description": "Título de la nota (1-100 caracteres)",
+        "minLength": 1,
+        "maxLength": 100,
+        "default": ""
+      },
+      "content": {
+        "type": "string",
+        "description": "Contenido de la nota (1-5000 caracteres)",
+        "minLength": 1,
+        "maxLength": 5000,
+        "default": ""
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "maxItems": 10,
+        "description": "Etiquetas para categorizar la nota",
+        "default": []
+      },
+      "query": {
+        "type": "string",
+        "description": "Término de búsqueda para action=search",
+        "maxLength": 100,
+        "default": ""
+      }
+    },
+    "required": ["action"]
+  }
+}

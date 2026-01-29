@@ -1,0 +1,17 @@
+{
+  "parameters": {
+    "rule": {
+      "interval": [
+        {
+          "field": "cronExpression",
+          "expression": "0 * * * *"
+        }
+      ]
+    }
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "Schedule Trigger",
+  "type": "n8n-nodes-base.scheduleTrigger",
+  "typeVersion": 1.1,
+  "position": [250, 300]
+}

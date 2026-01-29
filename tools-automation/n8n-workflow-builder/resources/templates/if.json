@@ -1,0 +1,29 @@
+{
+  "parameters": {
+    "conditions": {
+      "options": {
+        "caseSensitive": true,
+        "leftValue": "",
+        "typeValidation": "strict"
+      },
+      "conditions": [
+        {
+          "id": "REPLACE_WITH_UNIQUE_ID",
+          "leftValue": "={{ $json.fieldName }}",
+          "rightValue": "expectedValue",
+          "operator": {
+            "type": "string",
+            "operation": "equals"
+          }
+        }
+      ],
+      "combinator": "and"
+    },
+    "options": {}
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "IF",
+  "type": "n8n-nodes-base.if",
+  "typeVersion": 2,
+  "position": [650, 300]
+}

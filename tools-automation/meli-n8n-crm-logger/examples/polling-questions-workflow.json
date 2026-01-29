@@ -1,0 +1,293 @@
+{
+  "name": "MercadoLibre Questions to Pilot CRM (Polling)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.mercadolibre.com/my/received_questions/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mercadoLibreOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "UNANSWERED"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            },
+            {
+              "name": "sort_fields",
+              "value": "date_created"
+            },
+            {
+              "name": "sort_types",
+              "value": "DESC"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-unanswered-questions",
+      "name": "Get Unanswered Questions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300],
+      "credentials": {
+        "mercadoLibreOAuth2Api": {
+          "id": "1",
+          "name": "MercadoLibre OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "questions",
+        "options": {}
+      },
+      "id": "split-questions",
+      "name": "Split Questions",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Filtrar preguntas ya procesadas\n// En producción, usar base de datos o cache (Redis)\nconst processedQuestions = $getWorkflowStaticData('global');\n\nif (!processedQuestions.ids) {\n  processedQuestions.ids = [];\n}\n\nconst questionId = $json.id;\n\n// Si ya fue procesada, skip\nif (processedQuestions.ids.includes(questionId)) {\n  return null; // Skip this item\n}\n\n// Marcar como procesada\nprocessedQuestions.ids.push(questionId);\n\n// Limitar cache a últimas 1000 preguntas\nif (processedQuestions.ids.length > 1000) {\n  processedQuestions.ids = processedQuestions.ids.slice(-1000);\n}\n\nreturn { json: $json };"
+      },
+      "id": "filter-processed",
+      "name": "Filter Already Processed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mercadolibre.com/items/{{ $json.item_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mercadoLibreOAuth2Api",
+        "options": {}
+      },
+      "id": "get-item-details-polling",
+      "name": "Get Item Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1050, 300],
+      "credentials": {
+        "mercadoLibreOAuth2Api": {
+          "id": "1",
+          "name": "MercadoLibre OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Obtener datos del nodo anterior\nconst questionData = $('Filter Already Processed').item.json;\nconst itemData = $json;\n\n// Función helper para extraer marca y modelo\nfunction extractCarData(title) {\n  const parts = title.split(' ');\n  return {\n    brand: parts[0] || '',\n    model: parts.slice(1, 3).join(' ') || ''\n  };\n}\n\nconst carData = extractCarData(itemData.title);\n\n// Formatear notas\nconst formattedNotes = `\nCONSULTA MERCADOLIBRE (Polling)\n\nPregunta: ${questionData.text}\nProducto: ${itemData.title}\nPrecio: ${itemData.currency_id} ${itemData.price.toLocaleString()}\nStock: ${itemData.available_quantity} unidades\nCondición: ${itemData.condition === 'new' ? 'Nuevo' : 'Usado'}\nFecha: ${questionData.date_created}\n\nLink: ${itemData.permalink}\n`.trim();\n\n// Mapear a formato Pilot CRM\nconst crmPayload = {\n  action: 'create',\n  appkey: '{{$credentials.pilotCRM.appkey}}',\n  debug: 0,\n  \n  pilot_contact_type_id: 1,\n  pilot_business_type_id: 1,\n  \n  pilot_firstname: questionData.from?.nickname || 'Consulta ML',\n  pilot_email: questionData.from?.email || '',\n  \n  pilot_notes: formattedNotes,\n  pilot_tracking_id: `ML_Q_${questionData.id}`,\n  \n  pilot_product_of_interest: itemData.title,\n  pilot_car_brand: carData.brand,\n  pilot_car_modelo: carData.model,\n  \n  pilot_provider_service: 'MercadoLibre',\n  pilot_provider_url: itemData.permalink,\n  pilot_suborigin_id: '{{$credentials.pilotCRM.suborigenML}}',\n  \n  pilot_notificacions_opt_in_consent_flag: 0,\n  pilot_publicity_opt_in_consent_flag: 0\n};\n\nreturn { json: crmPayload };"
+      },
+      "id": "map-to-crm-format-polling",
+      "name": "Map to CRM Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pilotsolution.net/webhooks/welcome.php",
+        "sendBody": true,
+        "specifyBody": "urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "={{$json}}",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "post-to-pilot-crm-polling",
+      "name": "POST to Pilot CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-success-polling",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "log",
+        "message": "=Lead created successfully: {{ $json.data.id }}"
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1850, 200]
+    },
+    {
+      "parameters": {
+        "operation": "log",
+        "message": "=Error creating lead: {{ $json.message }}"
+      },
+      "id": "log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1850, 400]
+    }
+  ],
+  "connections": {
+    "Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Get Unanswered Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unanswered Questions": {
+      "main": [
+        [
+          {
+            "node": "Split Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Questions": {
+      "main": [
+        [
+          {
+            "node": "Filter Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Already Processed": {
+      "main": [
+        [
+          {
+            "node": "Get Item Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Item Details": {
+      "main": [
+        [
+          {
+            "node": "Map to CRM Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to CRM Format": {
+      "main": [
+        [
+          {
+            "node": "POST to Pilot CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST to Pilot CRM": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "id": "meli-questions-to-crm-polling",
+  "meta": {
+    "instanceId": "auto"
+  },
+  "tags": [
+    {
+      "name": "MercadoLibre",
+      "id": "1"
+    },
+    {
+      "name": "CRM",
+      "id": "2"
+    },
+    {
+      "name": "Polling",
+      "id": "3"
+    }
+  ]
+}

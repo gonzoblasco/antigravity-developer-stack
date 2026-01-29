@@ -1,0 +1,14 @@
+# System Files
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor Directories
+.vscode/
+.idea/
+
+# Agent/AI specific
+.agent/
+brain/
+*.tmp
+temp/

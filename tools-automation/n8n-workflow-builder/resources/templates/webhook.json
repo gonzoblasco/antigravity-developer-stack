@@ -1,0 +1,14 @@
+{
+  "parameters": {
+    "httpMethod": "POST",
+    "path": "webhook-endpoint",
+    "responseMode": "onReceived",
+    "options": {}
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "Webhook",
+  "type": "n8n-nodes-base.webhook",
+  "typeVersion": 1,
+  "position": [250, 300],
+  "webhookId": "REPLACE_WITH_UNIQUE_WEBHOOK_ID"
+}

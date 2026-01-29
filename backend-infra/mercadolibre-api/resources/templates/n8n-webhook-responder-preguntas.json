@@ -1,0 +1,252 @@
+{
+  "name": "ML - Responder Preguntas Automáticamente",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ml-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-ml-questions",
+      "name": "Webhook ML",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "ml-questions-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.topic }}",
+              "operation": "equals",
+              "value2": "questions"
+            }
+          ]
+        }
+      },
+      "id": "filter-questions",
+      "name": "Filtrar Preguntas",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mercadolibre.com/questions/{{ $json.resource.split('/').pop() }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mercadoLibreApi",
+        "options": {}
+      },
+      "id": "get-question-details",
+      "name": "Obtener Detalles Pregunta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lógica simple de respuestas automáticas\nconst question = $input.first().json;\nconst preguntaTexto = question.text.toLowerCase();\n\nlet respuesta = null;\n\n// Diccionario de respuestas predefinidas\nconst respuestas = {\n  'envio': 'El envío es gratuito a todo el país. El tiempo de entrega es de 3-5 días hábiles.',\n  'stock': 'Tenemos stock disponible. Realizá tu compra con confianza.',\n  'garantia': 'El producto tiene 30 días de garantía por defectos de fábrica.',\n  'color': 'Está disponible en los colores mostrados en las fotos. Consultá stock de color específico.',\n  'talle': 'Contamos con todos los talles. Especificá cuál necesitás al comprar.',\n  'precio': 'El precio publicado es el correcto. Aceptamos todos los medios de pago de Mercado Pago.',\n  'factura': 'Emitimos factura A o B según corresponda. Indicá tus datos al comprar.'\n};\n\n// Buscar palabra clave en la pregunta\nfor (const [keyword, respuestaTexto] of Object.entries(respuestas)) {\n  if (preguntaTexto.includes(keyword)) {\n    respuesta = respuestaTexto;\n    break;\n  }\n}\n\n// Si no hay respuesta automática, marcar para revisión manual\nif (!respuesta) {\n  return [{\n    json: {\n      question_id: question.id,\n      question_text: question.text,\n      respuesta_automatica: false,\n      requiere_revision: true\n    }\n  }];\n}\n\n// Retornar respuesta automática\nreturn [{\n  json: {\n    question_id: question.id,\n    question_text: question.text,\n    respuesta: respuesta,\n    respuesta_automatica: true\n  }\n}];"
+      },
+      "id": "generate-answer",
+      "name": "Generar Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.respuesta_automatica }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-auto-response",
+      "name": "¿Respuesta Automática?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.mercadolibre.com/answers",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mercadoLibreApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "question_id",
+              "value": "={{ $json.question_id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.respuesta }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "post-answer",
+      "name": "Publicar Respuesta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 100]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appXXXXXXXXXXXXXX",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblPreguntasPendientes",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question_id": "={{ $json.question_id }}",
+            "question_text": "={{ $json.question_text }}",
+            "fecha": "={{ $now.toISO() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "save-to-airtable",
+      "name": "Guardar para Revisión",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1250, 300],
+      "disabled": true,
+      "notes": "Opcional: guardar en Airtable o base de datos"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "respond-webhook-ignore",
+      "name": "Responder (Ignorar)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 400]
+    }
+  ],
+  "connections": {
+    "Webhook ML": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Preguntas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Preguntas": {
+      "main": [
+        [
+          {
+            "node": "Obtener Detalles Pregunta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder (Ignorar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Detalles Pregunta": {
+      "main": [
+        [
+          {
+            "node": "Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "¿Respuesta Automática?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Respuesta Automática?": {
+      "main": [
+        [
+          {
+            "node": "Publicar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar para Revisión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publicar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar para Revisión": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

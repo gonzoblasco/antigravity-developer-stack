@@ -1,0 +1,22 @@
+{
+  "parameters": {
+    "mode": "manual",
+    "duplicateItem": false,
+    "assignments": {
+      "assignments": [
+        {
+          "id": "REPLACE_WITH_UNIQUE_ID",
+          "name": "fieldName",
+          "value": "{{ $json.inputValue }}",
+          "type": "string"
+        }
+      ]
+    },
+    "options": {}
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "Set",
+  "type": "n8n-nodes-base.set",
+  "typeVersion": 3.3,
+  "position": [450, 300]
+}

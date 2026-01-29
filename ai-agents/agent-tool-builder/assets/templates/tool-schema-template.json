@@ -1,0 +1,106 @@
+{
+  "name": "tool_name_here",
+  "description": "[TODO: Fill using template below]\n\n[ACTION] [WHAT] using [METHOD].\nAccepts [INPUT with types and constraints].\nReturns [OUTPUT structure with key fields].\nThrows [ERROR_TYPE] if [CONDITION].",
+
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "required_param": {
+        "type": "string",
+        "description": "Clear description of what this parameter does",
+        "minLength": 1,
+        "maxLength": 500,
+        "_comment": "Add constraints like minLength, maxLength, pattern for strings"
+      },
+
+      "optional_param": {
+        "type": "integer",
+        "description": "Optional parameter with sensible default",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 10,
+        "_comment": "Numeric types should have min/max bounds"
+      },
+
+      "enum_param": {
+        "type": "string",
+        "enum": ["option1", "option2", "option3"],
+        "description": "Use enum when choices are finite and known",
+        "_comment": "Enums prevent invalid values and guide LLM"
+      },
+
+      "array_param": {
+        "type": "array",
+        "description": "Array with specific item type and size constraints",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 10,
+        "uniqueItems": true,
+        "_comment": "Always specify items type and consider size limits"
+      },
+
+      "object_param": {
+        "type": "object",
+        "description": "Nested object - keep nesting shallow (max 2-3 levels)",
+        "properties": {
+          "nested_field": {
+            "type": "string",
+            "description": "Each nested field needs description"
+          }
+        },
+        "required": ["nested_field"],
+        "_comment": "Consider flattening if nesting gets too deep"
+      },
+
+      "complex_param_with_example": {
+        "type": "object",
+        "description": "For complex types, provide examples",
+        "properties": {
+          "field1": { "type": "string" },
+          "field2": { "type": "number" }
+        },
+        "examples": [
+          {
+            "field1": "example_value",
+            "field2": 42.5
+          }
+        ],
+        "_comment": "Examples are critical for non-obvious formats"
+      }
+    },
+
+    "required": ["required_param"],
+    "_comment_required": "Only include truly required parameters. If 80%+ of calls use same value, make it optional with default."
+  },
+
+  "_guidelines": {
+    "description_checklist": [
+      "Does it start with an action verb?",
+      "Does it specify input format and constraints?",
+      "Does it describe output structure?",
+      "Does it mention possible errors?",
+      "Is it 20-150 words?",
+      "Is it clear without external context?"
+    ],
+
+    "schema_checklist": [
+      "All fields have clear descriptions?",
+      "Types are specific (not 'any' or generic 'object')?",
+      "Constraints added where appropriate (min/max/pattern)?",
+      "Enums used for finite choice sets?",
+      "Defaults provided for optional params?",
+      "Examples provided for complex types?",
+      "Nesting kept shallow (< 3 levels)?"
+    ],
+
+    "common_mistakes": {
+      "vague_description": "Change 'Processes data' to 'Validates user config against JSON schema'",
+      "missing_constraints": "Add minLength, maxLength to strings; minimum, maximum to numbers",
+      "any_type": "Replace 'any' with specific type or union (oneOf)",
+      "no_examples": "Add examples for complex/unintuitive parameters",
+      "deep_nesting": "Flatten nested objects or split into multiple tools"
+    }
+  }
+}

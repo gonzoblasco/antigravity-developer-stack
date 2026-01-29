@@ -1,0 +1,12 @@
+{
+  "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ $json }}",
+    "options": {}
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "Respond to Webhook",
+  "type": "n8n-nodes-base.respondToWebhook",
+  "typeVersion": 1,
+  "position": [850, 300]
+}

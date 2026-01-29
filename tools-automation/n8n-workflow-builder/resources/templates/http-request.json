@@ -1,0 +1,15 @@
+{
+  "parameters": {
+    "method": "GET",
+    "url": "https://api.example.com/endpoint",
+    "options": {},
+    "sendHeaders": false,
+    "sendQuery": false,
+    "sendBody": false
+  },
+  "id": "REPLACE_WITH_UNIQUE_ID",
+  "name": "HTTP Request",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.1,
+  "position": [650, 300]
+}

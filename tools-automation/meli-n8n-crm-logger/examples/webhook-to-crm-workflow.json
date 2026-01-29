@@ -1,0 +1,223 @@
+{
+  "name": "MercadoLibre Questions to Pilot CRM (Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meli-questions",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger-meli",
+      "name": "Webhook ML Questions",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mercadolibre.com/questions/{{ $json.body.resource.split('/')[2] }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mercadoLibreOAuth2Api",
+        "options": {}
+      },
+      "id": "get-question-details",
+      "name": "Get Question Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300],
+      "credentials": {
+        "mercadoLibreOAuth2Api": {
+          "id": "1",
+          "name": "MercadoLibre OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mercadolibre.com/items/{{ $json.item_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mercadoLibreOAuth2Api",
+        "options": {}
+      },
+      "id": "get-item-details",
+      "name": "Get Item Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 300],
+      "credentials": {
+        "mercadoLibreOAuth2Api": {
+          "id": "1",
+          "name": "MercadoLibre OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Obtener datos de los nodos anteriores\nconst questionData = $('Get Question Details').item.json;\nconst itemData = $('Get Item Details').item.json;\n\n// Función helper para extraer marca y modelo (best effort)\nfunction extractCarData(title) {\n  const parts = title.split(' ');\n  return {\n    brand: parts[0] || '',\n    model: parts.slice(1, 3).join(' ') || ''\n  };\n}\n\nconst carData = extractCarData(itemData.title);\n\n// Formatear notas con contexto completo\nconst formattedNotes = `\nCONSULTA MERCADOLIBRE\n\nPregunta: ${questionData.text}\nProducto: ${itemData.title}\nPrecio: ${itemData.currency_id} ${itemData.price.toLocaleString()}\nStock: ${itemData.available_quantity} unidades\nCondición: ${itemData.condition === 'new' ? 'Nuevo' : 'Usado'}\nFecha: ${questionData.date_created}\n\nLink: ${itemData.permalink}\n`.trim();\n\n// Mapear a formato Pilot CRM\nconst crmPayload = {\n  action: 'create',\n  appkey: '{{$credentials.pilotCRM.appkey}}',\n  debug: 0,\n  \n  // Tipo de contacto y negocio (configurar según tu instancia)\n  pilot_contact_type_id: 1, // 1 = Electrónico\n  pilot_business_type_id: 1, // Ajustar: 1=0km, 2=Usados, etc.\n  \n  // Datos del comprador\n  pilot_firstname: questionData.from?.nickname || 'Consulta ML',\n  pilot_email: questionData.from?.email || '',\n  \n  // Datos de la consulta\n  pilot_notes: formattedNotes,\n  pilot_tracking_id: `ML_Q_${questionData.id}`,\n  \n  // Datos del producto\n  pilot_product_of_interest: itemData.title,\n  pilot_car_brand: carData.brand,\n  pilot_car_modelo: carData.model,\n  \n  // Metadatos\n  pilot_provider_service: 'MercadoLibre',\n  pilot_provider_url: itemData.permalink,\n  pilot_suborigin_id: '{{$credentials.pilotCRM.suborigenML}}',\n  \n  // Opt-ins por defecto\n  pilot_notificacions_opt_in_consent_flag: 0,\n  pilot_publicity_opt_in_consent_flag: 0\n};\n\nreturn { json: crmPayload };"
+      },
+      "id": "map-to-crm-format",
+      "name": "Map to CRM Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pilotsolution.net/webhooks/welcome.php",
+        "sendBody": true,
+        "specifyBody": "urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "={{$json}}",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "post-to-pilot-crm",
+      "name": "POST to Pilot CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-crm-success",
+      "name": "Check CRM Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"lead_id\": $json.data.id } }}"
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 500,
+        "responseBody": "={{ { \"status\": \"error\", \"message\": $json.message } }}"
+      },
+      "id": "respond-error",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 400]
+    }
+  ],
+  "connections": {
+    "Webhook ML Questions": {
+      "main": [
+        [
+          {
+            "node": "Get Question Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Question Details": {
+      "main": [
+        [
+          {
+            "node": "Get Item Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Item Details": {
+      "main": [
+        [
+          {
+            "node": "Map to CRM Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to CRM Format": {
+      "main": [
+        [
+          {
+            "node": "POST to Pilot CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST to Pilot CRM": {
+      "main": [
+        [
+          {
+            "node": "Check CRM Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check CRM Success": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "id": "meli-questions-to-crm-webhook",
+  "meta": {
+    "instanceId": "auto"
+  },
+  "tags": [
+    {
+      "name": "MercadoLibre",
+      "id": "1"
+    },
+    {
+      "name": "CRM",
+      "id": "2"
+    }
+  ]
+}

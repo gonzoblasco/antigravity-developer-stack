@@ -1,0 +1,185 @@
+{
+  "name": "Scheduled API Polling",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "k1l2m3n4-o5p6-7890-klmn-op1234567890",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "options": {},
+        "sendHeaders": false,
+        "sendQuery": false,
+        "sendBody": false
+      },
+      "id": "l2m3n4o5-p6q7-8901-lmno-pq2345678901",
+      "name": "Fetch Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Filtrar solo posts recientes (últimas 6 horas)\nconst sixHoursAgo = new Date();\nsixHoursAgo.setHours(sixHoursAgo.getHours() - 6);\n\nconst items = $input.all();\n\n// Simulamos que los posts tienen timestamp\n// En un caso real, filtrarías por fecha real\nconst recentPosts = items.filter((item, index) => {\n  // Tomar solo los primeros 5 para este ejemplo\n  return index < 5;\n});\n\nreturn recentPosts.map(item => {\n  return {\n    json: {\n      ...item.json,\n      checkedAt: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "id": "m3n4o5p6-q7r8-9012-mnop-qr3456789012",
+      "name": "Filter Recent Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=json",
+        "options": {}
+      },
+      "id": "n4o5p6q7-r8s9-0123-nopq-rs4567890123",
+      "name": "Split Into Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "post-condition-001",
+              "leftValue": "={{ $json.userId }}",
+              "rightValue": "1",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "o5p6q7r8-s9t0-1234-opqr-st5678901234",
+      "name": "Check If Important",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "notification-001",
+              "name": "subject",
+              "value": "New Important Post",
+              "type": "string"
+            },
+            {
+              "id": "notification-002",
+              "name": "message",
+              "value": "=Post ID {{ $json.id }}: {{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "notification-003",
+              "name": "timestamp",
+              "value": "={{ $now }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "p6q7r8s9-t0u1-2345-pqrs-tu6789012345",
+      "name": "Prepare Notification",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1250, 200]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Posts": {
+      "main": [
+        [
+          {
+            "node": "Filter Recent Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Recent Posts": {
+      "main": [
+        [
+          {
+            "node": "Split Into Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Items": {
+      "main": [
+        [
+          {
+            "node": "Check If Important",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Important": {
+      "main": [
+        [
+          {
+            "node": "Prepare Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "pinData": {},
+  "versionId": "1"
+}
