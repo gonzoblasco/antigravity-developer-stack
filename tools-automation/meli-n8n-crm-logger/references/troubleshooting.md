@@ -43,6 +43,21 @@
   - Uso estricto de `pilot_tracking_id` mappeado a `question.id`.
   - Pilot CRM debería rechazar duplicados si el tracking ID ya existe.
 
+### 4. Error de Conexión OAuth ("Lo sentimos...")
+
+- **Síntoma:** Al intentar conectar n8n con ML, aparece un popup de error genérico.
+- **Solución:**
+  1. Ve a la configuración de tu App en ML.
+  2. Activa el checkbox **"Authorization Code"** (está desactivado por defecto).
+  3. Verifica que la **Redirect URI** coincida exactamente con la de n8n (`.../callback`).
+  4. Borra cualquier parámetro extra en "Auth URI Query Params" en n8n.
+
+### 5. Error 404 en GET /questions
+
+- **Síntoma:** Recibes `404 Not Found` al probar el flujo.
+- **Causa:** Probablemente estás usando un ID de prueba (ej: `123456`) que no existe en ML.
+- **Confirmación:** Si el error dice "Resource not found", ¡la conexión es EXITOSA! ML recibió tu petición y respondió. Solo necesitas esperar una pregunta real.
+
 ---
 
 ## Restricciones y Seguridad

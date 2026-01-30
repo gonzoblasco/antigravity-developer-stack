@@ -21,6 +21,11 @@ sequenceDiagram
 2. Crear nueva aplicación
 3. Configurar **Redirect URI** (debe ser HTTPS en producción)
 4. Copiar `APP_ID` y `SECRET_KEY`
+5. **CRÍTICO:** En "Autenticación y Seguridad" > "Flujos OAuth2", marcar los checkboxes:
+   - [x] Authorization Code
+   - [x] Refresh Token
+   - [x] Client Credentials
+         _(Si no marcas "Authorization Code", el login fallará)._
 
 ## Paso 2: Obtener Código de Autorización
 

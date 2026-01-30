@@ -25,6 +25,28 @@ Para recibir notificaciones en tiempo real cuando alguien hace una pregunta.
 
 ---
 
+## 2. Configuración OAuth2 en n8n
+
+Para que n8n pueda **leer** los detalles de la pregunta (API `GET /questions/{id}`), necesitas autenticación OAuth2.
+
+**Configuración de Credencial ("Generic OAuth2 API"):**
+
+Debido a particularidades de MeLi, usa "Generic OAuth2 API" en lugar del preset por defecto si este falla.
+
+| Campo                     | Valor                                                              |
+| :------------------------ | :----------------------------------------------------------------- |
+| **Grant Type**            | `Authorization Code`                                               |
+| **Auth URL**              | `https://auth.mercadolibre.com.ar/authorization` (o `.com` global) |
+| **Token URL**             | `https://api.mercadolibre.com/oauth/token`                         |
+| **Client Auth**           | **Send as Body Parameters** (IMPORTANTE)                           |
+| **Scope**                 | `read write offline_access`                                        |
+| **Auth URI Query Params** | (Dejar vacío)                                                      |
+
+> [!TIP]
+> Asegúrate de agregar la **Callback URL** de n8n en la configuración de la App en Mercado Libre ("Redirect URIs").
+
+---
+
 ## 2. Mapeo de Datos (Function Node)
 
 Este código JavaScript transforma el JSON de MercadoLibre al formato que espera Pilot Solutions.
