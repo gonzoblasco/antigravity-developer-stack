@@ -101,6 +101,7 @@ If you are looking for a specific skill, here is the complete index by domain.
 - **[`frontend-dev-guidelines`](frontend-ui/frontend-dev-guidelines)**: Scalable frontend code.
 - **[`react-frontend-patterns`](frontend-ui/react-frontend-patterns)**: Hooks & Composition.
 - **[`react-ui-patterns`](frontend-ui/react-ui-patterns)**: Design Systems & Components.
+- **[`react-exam-copilot`](frontend-ui/react-exam-copilot)**: Senior React exam & coding challenge assistant.
 - **[`react-migration-16-to-19`](frontend-ui/react-migration-16-to-19)**: Upgrade guides.
 - **[`redux-migration-rtk-zustand`](frontend-ui/redux-migration-rtk-zustand)**: Modern state management.
 - **[`nextjs-best-practices`](frontend-ui/nextjs-best-practices)**: App Router & SSR.

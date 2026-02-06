@@ -51,6 +51,11 @@ _Goal: Turn users into fans._
     - _Aesthetics_: Glassmorphism, modern gradients, and "breathing room" (whitespace).
     - _Mindset_: "If it looks basic, you failed."
 
+3.  **Technical Challenges**: Preparing for exams or coding challenges? Use **[`react-exam-copilot`](react-exam-copilot/SKILL.md)**.
+    - _Training Mode_: Full solutions with explanations.
+    - _Exam Mode_: Guided hints without giving away answers.
+    - _Checklists_: A11y, Performance, Testing, and Code Quality.
+
 ### 🔄 Phase 4: Modernization (Legacy)
 
 _Goal: Pay down technical debt safely._
@@ -69,6 +74,7 @@ _Goal: Pay down technical debt safely._
 | **[`frontend-dev-guidelines`](frontend-dev-guidelines/)**         | Standards  | Code organization, naming conventions, directory structure |
 | **[`nextjs-best-practices`](nextjs-best-practices/)**             | Framework  | Building scalable Next.js apps (App Router, SSR)           |
 | **[`react-frontend-patterns`](react-frontend-patterns/)**         | Logic      | Hooks, composition, performance optimization               |
+| **[`react-exam-copilot`](react-exam-copilot/)**                   | Challenges | Senior React exams, coding challenges, interview prep      |
 | **[`tailwind-patterns`](tailwind-patterns/)**                     | Styling    | Best practices for Utility-First CSS                       |
 | **[`redux-migration-rtk-zustand`](redux-migration-rtk-zustand/)** | State      | Modernizing global state management                        |
 | **[`react-migration-16-to-19`](react-migration-16-to-19/)**       | Legacy     | Upgrading old React codebases                              |
